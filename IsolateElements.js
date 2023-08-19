@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Isolate iFrame and Video elements from pages
 // @namespace    http://tampermonkey.net/
-// @version      1.2
+// @version      1.3
 // @description  Isolate iframes and video elements on the page. Allows you to view the elements without the distractions of the rest of the page
 // @author       You
 // @match        *://*/*
@@ -24,8 +24,8 @@
     button.style.zIndex = '9999';
     button.style.padding = '5px 10px';
     button.style.margin = '5px';
-    button.style.backgroundColor = 'white';
-    button.style.color = 'black'; // Set your desired text color
+    button.style.backgroundColor = '#fff';
+    button.style.color = '#000';
     button.style.border = '1px solid #ccc';
     button.addEventListener('click', organizeElements);
     document.body.appendChild(button);
@@ -70,7 +70,7 @@
       const identifyButton = createStyledButton('Identify');
       identifyButton.addEventListener('click', () => identifyElement(element.element));
       const deleteButton = createStyledButton('Delete');
-      deleteButton.addEventListener('click', () => deleteElement(element.element));
+      deleteButton.addEventListener('click', () => toggleDeleteRestore(element, deleteButton));
       cell.appendChild(moveButton);
       cell.appendChild(identifyButton);
       cell.appendChild(deleteButton);
@@ -107,9 +107,10 @@
     button.textContent = text;
     button.style.padding = '5px 10px';
     button.style.margin = '5px';
-    button.style.backgroundColor = 'white';
-    button.style.color = 'black'; // Set your desired text color
+    button.style.backgroundColor = '#fff';
+    button.style.color = '#000';
     button.style.border = '1px solid #ccc';
+    button.style.textTransform = 'none';
     return button;
   }
 
@@ -119,6 +120,22 @@
 
   function deleteElement (element) {
     element.remove();
+  }
+
+  function toggleDeleteRestore (element, button) {
+    if (element.removed) {
+      element.removed = false;
+      button.textContent = 'Delete';
+      button.style.backgroundColor = 'white';
+      button.style.color = 'black';
+      moveElement(element.element);
+    } else {
+      element.removed = true;
+      button.textContent = 'Restore';
+      button.style.backgroundColor = 'green';
+      button.style.color = 'white';
+      deleteElement(element.element);
+    }
   }
 
   function deleteBody () {
