@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         Isolate iFrame and Video elements from pages
 // @namespace    http://tampermonkey.net/
-// @version      1.3
+// @version      1.1
 // @description  Isolate iframes and video elements on the page. Allows you to view the elements without the distractions of the rest of the page
-// @author       You
+// @author       Bryan Dennehy
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
@@ -14,6 +14,9 @@
   if (window.self !== window.top) {
     return;
   }
+
+  // Store information about deleted elements
+  const deletedElements = [];
 
   function createButton () {
     const button = document.createElement('button');
@@ -32,19 +35,19 @@
   }
 
   function organizeElements () {
-    const elements = [];
+    const elementObjs = [];
     const iframes = document.querySelectorAll('iframe');
     const videos = document.querySelectorAll('video');
 
     iframes.forEach(iframe => {
       if (!iframe.parentElement.closest('iframe')) {
-        elements.push({ type: 'iframe', element: iframe });
+        elementObjs.push({ type: 'iframe', element: iframe });
       }
     });
 
     videos.forEach(video => {
       if (!video.parentElement.closest('iframe')) {
-        elements.push({ type: 'video', element: video });
+        elementObjs.push({ type: 'video', element: video });
       }
     });
 
@@ -62,26 +65,30 @@
     const table = document.createElement('table');
     table.style.width = '100%';
 
-    elements.forEach((element, index) => {
+    elementObjs.forEach((elementObj, index) => {
       const row = document.createElement('tr');
       const cell = document.createElement('td');
+
       const moveButton = createStyledButton('Move');
-      moveButton.addEventListener('click', () => moveElement(element.element));
+      moveButton.addEventListener('click', () => moveElement(elementObj.element));
+
       const identifyButton = createStyledButton('Identify');
-      identifyButton.addEventListener('click', () => identifyElement(element.element));
-      const deleteButton = createStyledButton('Delete');
-      deleteButton.addEventListener('click', () => toggleDeleteRestore(element, deleteButton));
+      identifyButton.addEventListener('click', () => identifyElement(elementObj.element));
+
+      const toggleButton = createStyledButton('Delete');
+      toggleButton.addEventListener('click', () => toggleDeleteRestore({ elementObj, toggleButton, elementIndex: index }));
+
       cell.appendChild(moveButton);
       cell.appendChild(identifyButton);
-      cell.appendChild(deleteButton);
-      cell.appendChild(document.createTextNode(` (${element.type})`));
+      cell.appendChild(toggleButton);
+      cell.appendChild(document.createTextNode(` (${elementObj.type})`));
       row.appendChild(cell);
       table.appendChild(row);
     });
 
     const moveAllButton = createStyledButton('Move All Elements');
     moveAllButton.addEventListener('click', () => {
-      elements.forEach(element => moveElement(element.element));
+      elementObjs.forEach(elementObj => moveElement(elementObj.element));
       container.remove();
     });
 
@@ -118,23 +125,30 @@
     document.body.parentElement.appendChild(element);
   }
 
-  function deleteElement (element) {
+  function deleteElement ({ elementObj, elementIndex }) {
+    const { element, index } = elementObj;
+    elementObj.removed = true;
+    const parentElement = elementObj.element.parentElement;
+    deletedElements.push({ element, parentElement: parentElement, elementIndex });
     element.remove();
   }
 
-  function toggleDeleteRestore (element, button) {
-    if (element.removed) {
-      element.removed = false;
-      button.textContent = 'Delete';
-      button.style.backgroundColor = 'white';
-      button.style.color = 'black';
-      moveElement(element.element);
+  function toggleDeleteRestore ({ elementObj, toggleButton, elementIndex }) {
+    const { element, removed } = elementObj;
+    if (removed) {
+      if (!(elementIndex >= 0)) return
+      const deletedElement = deletedElements.find(deletedElement => deletedElement.elementIndex === elementIndex)
+      const parentElement = deletedElement.parentElement
+      parentElement.appendChild(element);
+      elementObj.removed = false;
+      toggleButton.textContent = 'Delete';
+      toggleButton.style.backgroundColor = '#fff';
+      toggleButton.style.color = '#000';
     } else {
-      element.removed = true;
-      button.textContent = 'Restore';
-      button.style.backgroundColor = 'green';
-      button.style.color = 'white';
-      deleteElement(element.element);
+      deleteElement({ elementObj, elementIndex });
+      toggleButton.textContent = 'Restore';
+      toggleButton.style.backgroundColor = 'green';
+      toggleButton.style.color = 'white';
     }
   }
 
