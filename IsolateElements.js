@@ -23,7 +23,7 @@
     textTransform: 'none'
   }
 
-  function addCustomVideoControls (videoElement, index) {
+  async function addCustomVideoControls (videoElement, index) {
     // Define the custom controls HTML with a unique ID
     const customControlsHTML = `
         <div>
@@ -38,10 +38,27 @@
     container.style.alignItems = 'center';
     container.innerHTML = customControlsHTML;
 
+    // Create the video element
+    const video = videoElement;
     video.id = `video-${index}`;
     console.log(videoElement)
-    video.src = videoElement.src; // Set the video source
-    video.controls = true; // Enable native video controls
+    let videoSrc = videoElement.src;
+    if (!videoElement.src) {
+      await videoElement.click()
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log(videoElement.src)
+      videoSrc = videoElement.src
+      // await setTimeout(() => {
+      //   console.log(videoElement.src)
+      //   videoSrc = videoElement.src
+      //   return videoElement.click()
+      // }, 1000)
+      // videoElement.click()
+    }
+    await console.log('videoSrc')
+    await console.log(videoSrc)
+    video.src = videoSrc; // Set the video source
+    // video.controls = true; // Enable native video controls
     container.appendChild(video);
 
     // Create the custom controls div with a unique ID
@@ -182,7 +199,7 @@
       cell.style.padding = '4px'
 
       let moveButton = createStyledButton('Move');
-      moveButton.addEventListener('click', () => moveElement(elementObj.element, index));
+      moveButton.addEventListener('click', () => moveElement(elementObj, index));
       moveButton = addButtonHoverListeners({ button: moveButton });
 
       let identifyButton = createStyledButton('Identify');
@@ -204,7 +221,7 @@
 
     let moveAllButton = createStyledButton('Move All Elements');
     moveAllButton.addEventListener('click', () => {
-      elementObjs.forEach(elementObj => moveElement(elementObj.element));
+      elementObjs.forEach(elementObj => moveElement(elementObj));
       menuContainer.remove();
     });
     moveAllButton = addButtonHoverListeners({ button: moveAllButton });
@@ -237,15 +254,16 @@
     return button;
   }
 
-  function moveElement (element, index) {
-    if (element.type === 'video') {
+  function moveElement (elementObj, index) {
+    console.log(elementObj)
+    if (elementObj.type === 'video') {
       //APpend controls with index,
       // append video into that
-      console.log(element)
+      console.log(elementObj)
       console.log(index)
-      addCustomVideoControls(element, index);
+      addCustomVideoControls(elementObj.element, index);
     } else {
-      document.body.parentElement.appendChild(element);
+      document.body.parentElement.appendChild(elementObj.element);
     }
   }
 
