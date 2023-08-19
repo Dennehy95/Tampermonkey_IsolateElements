@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Isolate iFrame and Video elements from pages
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.2
 // @description  Isolate iframes and video elements on the page. Allows you to view the elements without the distractions of the rest of the page
 // @author       You
 // @match        *://*/*
@@ -11,9 +11,8 @@
 (function () {
   'use strict';
 
-  // Check if the script is running in the top-level window
   if (window.self !== window.top) {
-    return; // Do nothing if running in an iframe
+    return;
   }
 
   function createButton () {
@@ -23,6 +22,11 @@
     button.style.top = '10px';
     button.style.right = '10px';
     button.style.zIndex = '9999';
+    button.style.padding = '5px 10px';
+    button.style.margin = '5px';
+    button.style.backgroundColor = 'white';
+    button.style.color = 'black'; // Set your desired text color
+    button.style.border = '1px solid #ccc';
     button.addEventListener('click', organizeElements);
     document.body.appendChild(button);
   }
@@ -61,34 +65,32 @@
     elements.forEach((element, index) => {
       const row = document.createElement('tr');
       const cell = document.createElement('td');
-      const moveButton = document.createElement('button');
-      moveButton.textContent = 'Move';
+      const moveButton = createStyledButton('Move');
       moveButton.addEventListener('click', () => moveElement(element.element));
-      const identifyButton = document.createElement('button');
-      identifyButton.textContent = 'Identify';
+      const identifyButton = createStyledButton('Identify');
       identifyButton.addEventListener('click', () => identifyElement(element.element));
+      const deleteButton = createStyledButton('Delete');
+      deleteButton.addEventListener('click', () => deleteElement(element.element));
       cell.appendChild(moveButton);
       cell.appendChild(identifyButton);
+      cell.appendChild(deleteButton);
       cell.appendChild(document.createTextNode(` (${element.type})`));
       row.appendChild(cell);
       table.appendChild(row);
     });
 
-    const moveAllButton = document.createElement('button');
-    moveAllButton.textContent = 'Move All Elements';
+    const moveAllButton = createStyledButton('Move All Elements');
     moveAllButton.addEventListener('click', () => {
       elements.forEach(element => moveElement(element.element));
       container.remove();
     });
 
-    const hideButton = document.createElement('button');
-    hideButton.textContent = 'Hide Body';
+    const hideButton = createStyledButton('Hide Body');
     hideButton.addEventListener('click', () => {
       document.body.style.display = 'none';
     });
 
-    const deleteButton = document.createElement('button');
-    deleteButton.textContent = 'Delete Body';
+    const deleteButton = createStyledButton('Delete Body');
     deleteButton.addEventListener('click', () => {
       deleteBody();
     });
@@ -100,8 +102,23 @@
     document.body.appendChild(container);
   }
 
+  function createStyledButton (text) {
+    const button = document.createElement('button');
+    button.textContent = text;
+    button.style.padding = '5px 10px';
+    button.style.margin = '5px';
+    button.style.backgroundColor = 'white';
+    button.style.color = 'black'; // Set your desired text color
+    button.style.border = '1px solid #ccc';
+    return button;
+  }
+
   function moveElement (element) {
-    document.body.parentElement.appendChild(element); // Append to the parent of body
+    document.body.parentElement.appendChild(element);
+  }
+
+  function deleteElement (element) {
+    element.remove();
   }
 
   function deleteBody () {
@@ -112,7 +129,7 @@
 
   function identifyElement (element) {
     const originalBoxShadow = element.style.boxShadow;
-    element.style.boxShadow = '0 0 10px 2px red'; // Change the values to adjust shadow size
+    element.style.boxShadow = '0 0 10px 2px red';
     setTimeout(() => {
       element.style.boxShadow = originalBoxShadow;
     }, 3000);
